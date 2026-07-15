@@ -1,0 +1,160 @@
+// ─────────────────────────────────────────────────────────────
+// RepoFlow Database Schema
+// PostgreSQL via Prisma ORM
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────
+
+enum IngestionStatus {
+  PENDING
+  FETCHING
+  CHUNKING
+  EMBEDDING
+  INDEXING
+  COMPLETED
+  FAILED
+}
+
+enum ChunkType {
+  FUNCTION
+  CLASS
+  HEADING_SECTION
+  SLIDING_WINDOW
+  FULL_FILE
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+// ── Models ───────────────────────────────────────────────────
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  repositories Repository[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("users")
+}
+
+model Repository {
+  id                String          @id @default(uuid())
+  userId            String?
+  user              User?           @relation(fields: [userId], references: [id])
+
+  githubUrl         String          @unique
+  owner             String
+  name              String
+  defaultBranch     String          @default("main")
+  description       String?
+  language          String?
+  stars             Int             @default(0)
+  topics            String[]
+  license           String?
+
+  status            IngestionStatus @default(PENDING)
+  statusMessage     String?
+
+  pineconeNamespace String          @unique
+  totalFiles        Int             @default(0)
+  totalChunks       Int             @default(0)
+
+  files             RepositoryFile[]
+  chunks            Chunk[]
+  chatSessions      ChatSession[]
+
+  ingestedAt        DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([owner, name])
+  @@map("repositories")
+}
+
+model RepositoryFile {
+  id           String     @id @default(uuid())
+  repoId       String
+  repository   Repository @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  filePath     String
+  language     String?
+  sizeBytes    Int
+  sha          String
+  lastModified DateTime?
+
+  chunks       Chunk[]
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([repoId, filePath])
+  @@index([repoId])
+  @@map("repository_files")
+}
+
+model Chunk {
+  id               String         @id @default(uuid())
+  repoId           String
+  repository       Repository     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  fileId           String
+  file             RepositoryFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  content          String
+  startLine        Int
+  endLine          Int
+  chunkIndex       Int
+  chunkType        ChunkType
+  tokenCount       Int
+
+  pineconeVectorId String?        @unique
+
+  createdAt        DateTime       @default(now())
+
+  @@index([repoId])
+  @@index([fileId])
+  @@map("chunks")
+}
+
+model ChatSession {
+  id         String        @id @default(uuid())
+  repoId     String
+  repository Repository    @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  title      String?
+  messages   ChatMessage[]
+
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([repoId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id               String      @id @default(uuid())
+  sessionId        String
+  session          ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role             MessageRole
+  content          String
+  citations        Json?
+  confidenceScore  Float?
+  promptTokens     Int?
+  completionTokens Int?
+
+  createdAt        DateTime    @default(now())
+
+  @@index([sessionId])
+  @@map("chat_messages")
+}
