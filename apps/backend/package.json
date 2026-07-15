@@ -1,0 +1,39 @@
+{
+  "name": "@repoflow/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@pinecone-database/pinecone": "^7.2.0",
+    "@prisma/client": "^6.8.2",
+    "@repoflow/shared-types": "workspace:*",
+    "@repoflow/shared-utils": "workspace:*",
+    "@xenova/transformers": "^2.17.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "groq-sdk": "^1.2.1",
+    "helmet": "^8.1.0",
+    "octokit": "^5.0.5",
+    "tiktoken": "^1.0.22",
+    "typescript": "^5.8.3",
+    "winston": "^3.17.0",
+    "zod": "^3.25.11"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.2",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
+    "tsx": "^4.19.4",
+    "vitest": "^4.1.7"
+  }
+}
