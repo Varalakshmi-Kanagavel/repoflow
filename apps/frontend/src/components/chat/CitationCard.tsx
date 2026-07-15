@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileCode, Percent } from 'lucide-react';
 import type { RagCitation } from '../../services/api.client.js';
 

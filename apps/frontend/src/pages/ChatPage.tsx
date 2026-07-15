@@ -36,8 +36,9 @@ export function ChatPage() {
         .getSessions(repoId)
         .then((data) => {
           setSessions(data);
-          if (data.length > 0 && !currentSessionId) {
-            loadSession(data[0].id);
+          const firstSession = data[0];
+          if (firstSession && !currentSessionId) {
+            loadSession(firstSession.id);
           }
         })
         .catch(console.error);
